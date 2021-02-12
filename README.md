@@ -1,4 +1,4 @@
-# Towards Deeper Graph Neural Networks with Differentiable Group Normalization
+# Dirichlet Energy Constrained Learning for Deep Graph Neural Network
 
 This is an authors' implementation of "Dirichlet Energy Constrained Learning for Deep Graph Neural Network" in Pytorch.
 
