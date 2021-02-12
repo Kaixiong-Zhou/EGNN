@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="9127de5b-4a47-4373-b53e-6f79a14ab64b" name="zkxiong@datalab3.engr.tamu.edu:22 (project level) (1)" url="http:///">
+        <fileTransfer host="datalab3.engr.tamu.edu" port="22" accessType="SFTP">
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+      <webServer id="50cdae23-de01-4163-ad4d-b581dc890fdb" name="zkxiong@datalab3.engr.tamu.edu:22 (1)" url="http:///">
+        <fileTransfer host="datalab3.engr.tamu.edu" port="22" accessType="SFTP">
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+      <webServer id="ad0fe0b1-9f0b-45ca-ab2d-f6eab2000371" name="deepGNN-datalab3" url="http://datalab3.engr.tamu.edu">
+        <fileTransfer host="datalab3.engr.tamu.edu" port="22" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
