@@ -4,6 +4,8 @@ This is an authors' implementation of "Dirichlet Energy Constrained Learning for
 
 Authors: Kaixiong Zhou, Xiao Huang, Daochen Zha, Rui Chen, Li Li, Soo-Hyun Choi, Xia Hu
 
+Paper: https://arxiv.org/abs/2107.02392
+
 This work has been accepted by NeurIPS 2021
 
 
@@ -41,5 +43,12 @@ Hyperparameter explanations:
 
 
 
-# EGNN
-# EGNN
+# citation
+
+@article{zhou2021dirichlet,
+  title={Dirichlet energy constrained learning for deep graph neural networks},
+  author={Zhou, Kaixiong and Huang, Xiao and Zha, Daochen and Chen, Rui and Li, Li and Choi, Soo-Hyun and Hu, Xia},
+  journal={Advances in neural information processing systems},
+  year={2021}
+}
+
