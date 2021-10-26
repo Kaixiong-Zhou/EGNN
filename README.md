@@ -2,9 +2,9 @@
 
 This is an authors' implementation of "Dirichlet Energy Constrained Learning for Deep Graph Neural Network" in Pytorch.
 
-Authors: Anonymous Authors
+Authors: Kaixiong Zhou, Xiao Huang, Daochen Zha, Rui Chen, Li Li, Soo-Hyun Choi, Xia Hu
 
-This work is underreview by ICML 2021
+This work has been accepted by NeurIPS 2021
 
 
 ## Introduction
@@ -37,8 +37,6 @@ Hyperparameter explanations:
 'JKNet', 'APPNP', 'GCNII', 'EGNN']
 
 --dataset: we include ['Cora', 'Pubmed', 'Coauthor_Physics', 'Ogbn-arxiv']
-
-
 
 
 
