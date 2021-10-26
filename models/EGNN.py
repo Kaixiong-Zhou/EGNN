@@ -4,7 +4,9 @@ import torch.nn.functional as F
 from models.EGNN_layer import EGNNConv
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
 from torch_geometric.utils import to_dense_adj
-
+from torch_geometric.utils.num_nodes import maybe_num_nodes
+from torch_geometric.utils import remove_self_loops
+from torch_scatter import scatter_add
 
 class SReLU(nn.Module):
     """Shifted ReLU"""
@@ -99,25 +101,63 @@ class EGNN(nn.Module):
 
     def Dirichlet_energy(self, x, adj):
         # x = F.normalize(x, p=2, dim=1)
-        x = torch.matmul(torch.matmul(x.t(), adj), x)
+        x = torch.matmul(torch.matmul(x.t().cpu(), adj), x.cpu())
         energy = torch.trace(x)
+
         return energy.item()
+
+    def Dirichlet_energy_large_graph(self, x, row, col, norm_row, norm_col):
+        x_cpu = x.cpu()
+        batch_size = 10000
+        num_edge = row.size(0)
+        num_batch = int(num_edge / batch_size) + 1
+
+        energy = 0.
+        for i in range(num_batch-1):
+
+            index = slice(i*batch_size, (i+1)*batch_size)
+            x_norm = torch.norm(x_cpu[row[index]]*norm_row[index] - x_cpu[col[index]]*norm_col[index],
+                                p='fro', dim=1)
+            energy += torch.sum(x_norm).item()
+
+        x_tmp = x_cpu[row[(num_batch-1)*batch_size:]] * norm_row[(num_batch-1)*batch_size:] \
+                - x_cpu[col[(num_batch-1)*batch_size:]] * norm_col[(num_batch-1)*batch_size:]
+
+        x_norm = torch.norm(x_tmp, p='fro', dim=1)
+        energy += torch.sum(x_norm).item()
+
+        return energy / 2.
 
 
     def compute_energy(self, x, edge_index, device):
 
         energy_list = []
+        # edge_weight = None
+        # edge_index_cached, edge_weight = gcn_norm(
+        #     edge_index, edge_weight, x.size(0), False, dtype=x.dtype)
+        # adj_weight = to_dense_adj(edge_index_cached, edge_attr=edge_weight)
+        # num_nodes = x.size(0)
+        # adj_weight = torch.squeeze(adj_weight, dim=0)
+        # laplacian_weight = torch.eye(num_nodes, dtype=torch.float, device=device) - adj_weight
 
-        edge_weight = None
-        edge_index_cached, edge_weight = gcn_norm(
-            edge_index, edge_weight, x.size(0), False, dtype=x.dtype)
-        adj_weight = to_dense_adj(edge_index_cached, edge_attr=edge_weight)
+        ## for computing energy of large graph
         num_nodes = x.size(0)
-        adj_weight = torch.squeeze(adj_weight, dim=0)
-        laplacian_weight = torch.eye(num_nodes, dtype=torch.float, device=device) - adj_weight
+        edge_index_energy, _ = remove_self_loops(edge_index.cpu())
+        num_nodes = maybe_num_nodes(edge_index, num_nodes)
+        edge_weight = torch.ones((edge_index_energy.size(1),), dtype=torch.float,
+                                 device=edge_index_energy.device)
+
+        row, col = edge_index_energy[0], edge_index_energy[1]
+        deg = scatter_add(edge_weight, col, dim=0, dim_size=num_nodes)
+        deg = (1.+deg).pow_(-0.5)
+        deg.masked_fill_(deg == float('inf'), 0.)
+        norm_row = deg[row].unsqueeze(1)
+        norm_col = deg[col].unsqueeze(1)
+
 
         # compute energy in the first layer
-        energy = self.Dirichlet_energy(x, laplacian_weight)
+        # energy = self.Dirichlet_energy(x, laplacian_weight)
+        energy = self.Dirichlet_energy_large_graph(x, row, col, norm_row, norm_col)
         energy_list.append(energy)
 
         x = F.dropout(x, p=self.dropout, training=self.training)
@@ -131,7 +171,8 @@ class EGNN(nn.Module):
             x = F.relu(x)
 
         # compute energy in the first layer
-        energy = self.Dirichlet_energy(x, laplacian_weight)
+        # energy = self.Dirichlet_energy(x, laplacian_weight)
+        energy = self.Dirichlet_energy_large_graph(x, row, col, norm_row, norm_col)
         energy_list.append(energy)
 
         original_x = x
@@ -146,7 +187,8 @@ class EGNN(nn.Module):
             x = self.layers_activation[i](x)  # used in dropout, 85.0
 
             #  compute energy in the middle layer
-            energy = self.Dirichlet_energy(x, laplacian_weight)
+            # energy = self.Dirichlet_energy(x, laplacian_weight)
+            energy = self.Dirichlet_energy_large_graph(x, row, col, norm_row, norm_col)
             energy_list.append(energy)
 
         return energy_list

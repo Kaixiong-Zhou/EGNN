@@ -55,7 +55,6 @@ def main(args):
         del data
 
 
-
     if args.type_model == 'EGNN':
         args = reset_weight(args)
     list_acc = []
@@ -77,7 +76,7 @@ def main(args):
         print('avg energy_list ', np.mean(energy_list, axis=0))
     else:
         print(list_acc)
-        print('avg test acc: ', np.mean(list_acc))
+        print('avg test acc and std: ', np.mean(list_acc), np.std(list_acc))
 
     ## record training data
     filedir = f'./logs/{args.dataset}'

@@ -10,7 +10,6 @@ from models.EdgeDrop import EdgeDrop
 from models.APPNP import APPNP
 
 
-
 from torch_geometric.datasets import Planetoid
 from torch_geometric.datasets import PPI
 from torch_geometric.datasets import Coauthor, Amazon
@@ -30,7 +29,6 @@ import numpy as np
 # import matplotlib.gridspec as gridspec
 # from options.base_options import reset_weight
 from sklearn import metrics
-
 
 
 def load_ogbn(dataset='ogbn-arxiv'):

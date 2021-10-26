@@ -67,9 +67,9 @@ class GCN(nn.Module):
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.layers_GCN[-1](x, edge_index)
 
-        weight = self.layers_GCN[-3].weight.cpu().detach().numpy()
-        print(weight)
-        print(np.max(weight), np.mean(weight), np.min(weight))
+        # weight = self.layers_GCN[-3].weight.cpu().detach().numpy()
+        # print(weight)
+        # print(np.max(weight), np.mean(weight), np.min(weight))
 
         return x
 
