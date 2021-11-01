@@ -2,13 +2,10 @@ from typing import Tuple, Optional, Union
 import torch
 from torch import Tensor
 from torch.nn import Parameter
-import torch.nn as nn
 from torch_scatter import scatter_add
-# from torch_sparse import SparseTensor, matmul, fill_diag, sum, mul_
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.utils import add_remaining_self_loops
 from torch_geometric.utils.num_nodes import maybe_num_nodes
-
 from torch_geometric.nn.inits import glorot, zeros
 
 # Adj = Union[Tensor, SparseTensor]
@@ -20,38 +17,9 @@ Size = Optional[Tuple[int, int]]
 NoneType = Optional[Tensor]
 
 
-# @torch.jit._overload
-# def gcn_norm(edge_index, edge_weight=None, num_nodes=None, improved=False,
-#              add_self_loops=True, dtype=None):
-#     # type: (Tensor, OptTensor, Optional[int], bool, bool, Optional[int]) -> PairTensor  # noqa
-#     pass
-#
-#
-# @torch.jit._overload
-# def gcn_norm(edge_index, edge_weight=None, num_nodes=None, improved=False,
-#              add_self_loops=True, dtype=None):
-#     # type: (SparseTensor, OptTensor, Optional[int], bool, bool, Optional[int]) -> SparseTensor  # noqa
-#     pass
-
-
 def gcn_norm(edge_index, edge_weight=None, num_nodes=None, improved=False,
              add_self_loops=True, dtype=None):
     fill_value = 2. if improved else 1.
-
-    # if isinstance(edge_index, SparseTensor):
-    #     adj_t = edge_index
-    #     if not adj_t.has_value():
-    #         adj_t.fill_value(1., dtype=dtype)
-    #     if add_self_loops:
-    #         adj_t = fill_diag(adj_t, fill_value)
-    #     deg = sum(adj_t, dim=1)
-    #     deg_inv_sqrt = deg.pow_(-0.5)
-    #     deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0.)
-    #     adj_t = mul_(adj_t, deg_inv_sqrt.view(-1, 1))
-    #     adj_t = mul_(adj_t, deg_inv_sqrt.view(1, -1))
-    #     return adj_t
-    #
-    # else:
     num_nodes = maybe_num_nodes(edge_index, num_nodes)
 
     if edge_weight is None:
@@ -85,7 +53,6 @@ class GCNIIdenseConv(MessagePassing):
         self.improved = improved
         self.cached = cached
         self.weight = Parameter(torch.Tensor(in_channels, out_channels))
-
 
         self.reset_parameters()
 
@@ -131,7 +98,7 @@ class GCNIIdenseConv(MessagePassing):
 
         edge_index, norm = self.cached_result
 
-        support = self.propagate(edge_index, x=x, norm=norm) # + x
+        support = self.propagate(edge_index, x=x, norm=norm)
         support = (1 - alpha) * support + alpha * h0
         out = beta * torch.matmul(support, self.weight) + (1-beta) * support
 

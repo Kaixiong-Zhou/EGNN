@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="On explicit save action" serverName="deepGNN-datalab3" autoUploadExternalChanges="true">
+  <component name="PublishConfigData" autoUpload="On explicit save action" serverName="EGNN-release-datalab5" autoUploadExternalChanges="true">
     <serverData>
+      <paths name="EGNN-release-datalab3">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/grads/z/zkxiong/EGNN-release" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="EGNN-release-datalab5">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/grads/z/zkxiong/EGNN-release" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="deepGNN-datalab">
         <serverdata>
           <mappings>

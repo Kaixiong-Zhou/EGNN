@@ -20,6 +20,22 @@
           <option name="port" value="22" />
         </fileTransfer>
       </webServer>
+      <webServer id="8fceba37-7cb2-4782-9b6b-7c15c5dbbfea" name="EGNN-release-datalab3" url="http://datalab3.engr.tamu.edu">
+        <fileTransfer host="datalab3.engr.tamu.edu" port="22" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+      <webServer id="ef1fe751-8bdd-4373-9bd3-379eb89fb8a0" name="EGNN-release-datalab5" url="http://datalab5.engr.tamu.edu">
+        <fileTransfer host="datalab5.engr.tamu.edu" port="22" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
     </option>
   </component>
 </project>

@@ -23,22 +23,16 @@ def set_seed(args):
     np.random.seed(args.random_seed)
     random.seed(args.random_seed)
 
-seeds = [123] #  + [100, 123, 111]
-
 
 def main(args):
     train_mask = None
     val_mask = None
     test_mask = None
 
-    if args.dataset in ['CoauthorCS', 'Coauthor_Physics', 'Amazon_Computers']:
+    ## under semi supervised setting, split the data
+    if args.dataset == 'Coauthor_Physics':
         path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'data', args.dataset)
-        if args.dataset in ['CoauthorCS', 'Coauthor_Physics']:
-            file_name = 'CS' if args.dataset=='CoauthorCS' else "Physics"
-            data = Coauthor('../data', file_name, T.NormalizeFeatures())[0]
-        else:
-            file_name = 'Computers' if args.dataset == 'Amazon_Computers' else "Photo"
-            data = Amazon(path, file_name, T.NormalizeFeatures())[0]
+        data = Coauthor(path, "Physics", T.NormalizeFeatures())[0]
 
         num_nodes = data.x.size(0)
         train_mask = torch.zeros((num_nodes,), dtype=torch.bool)
@@ -54,51 +48,29 @@ def main(args):
             test_mask[index[perm[(train_num + val_num):]]] = 1
         del data
 
-
-    if args.type_model == 'EGNN':
-        args = reset_weight(args)
     list_acc = []
-
     for _ in range(10): # 10
-        # args.random_seed = seed
-        # set_seed(args)
-        torch.cuda.empty_cache()
         trnr = trainer(args, train_mask, val_mask, test_mask)
-        best_test_acc = trnr.train_and_test(args.compute_energy)
+        best_test_acc = trnr.train_and_test()
         list_acc.append(best_test_acc)
 
         del trnr
         torch.cuda.empty_cache()
         gc.collect()
 
-    if args.compute_energy:
-        energy_list = np.stack(list_acc, axis=0)
-        print('avg energy_list ', np.mean(energy_list, axis=0))
-    else:
-        print(list_acc)
-        print('avg test acc and std: ', np.mean(list_acc), np.std(list_acc))
+    print(list_acc)
+    print('avg test acc and std: ', np.mean(list_acc), np.std(list_acc))
 
     ## record training data
     filedir = f'./logs/{args.dataset}'
     if not os.path.exists(filedir):
         os.makedirs(filedir)
-    c_min = int(args.c_min * 100)
-    c_max = int(args.c_max * 100)
-    loss_weight = int(args.loss_weight*1e6)
-    bias_SReLU = int(args.bias_SReLU)
-
-    if args.compute_energy:
-        filename = args.type_model + f'energy_layer{args.num_layers}_{c_min}_{c_max}_{loss_weight}_{bias_SReLU}.npy'
-        filename = os.path.join(filedir, filename)
-        np.save(filename, energy_list)
-    else:
-        filename = args.type_model + f'_layer{args.num_layers}_{c_min}_{c_max}_{loss_weight}_{bias_SReLU}.npy'
-        filename = os.path.join(filedir, filename)
-        np.save(filename, np.array(list_acc))
+    filename = args.type_model + f'_layer{args.num_layers}.npy'
+    filename = os.path.join(filedir, filename)
+    np.save(filename, np.array(list_acc))
 
 
 if __name__ == "__main__":
-    # args = build_controller_args()
     args = BaseOptions().initialize()
     set_seed(args)
     main(args)

@@ -17,6 +17,8 @@ design and training of deep graph neurall networks.
 Based on the principle, we propose a new model named  Energetic GraphNeural Networks (EGNN).
 It could be easily constructed and trained to enable deep layer stacking. 
 
+The baseline GNN approaches and EGNN model accompanied with the default 
+hyperparameters are incuded in this repository.
 
 ## Requirements
 
@@ -35,20 +37,24 @@ python main.py --cuda_num=0  --type_model='EGNN' --dataset='Cora' --num_layers=6
 Hyperparameter explanations:
 
 
---type_model: the type of GNN model. We include ['GCN', 'pairnorm', 'EdgeDrop', 'simpleGCN'
+--type_model: the type of GNN model. We include ['GCN', 'pairnorm', 'EdgeDrop', 'SGC'
 'JKNet', 'APPNP', 'GCNII', 'EGNN']
 
---dataset: we include ['Cora', 'Pubmed', 'Coauthor_Physics', 'Ogbn-arxiv']
+--dataset: we include ['Cora', 'Pubmed', 'Coauthor_Physics', 'ogbn-arxiv']
+
+--num_layers: layers used in GNNs
 
 
 
+## citation
 
-# citation
-
+If using this code, please cite our paper.
+```
 @article{zhou2021dirichlet,
   title={Dirichlet energy constrained learning for deep graph neural networks},
   author={Zhou, Kaixiong and Huang, Xiao and Zha, Daochen and Chen, Rui and Li, Li and Choi, Soo-Hyun and Hu, Xia},
   journal={Advances in neural information processing systems},
   year={2021}
 }
+```
 

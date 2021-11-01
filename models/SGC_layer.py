@@ -58,11 +58,9 @@ class SGConv(MessagePassing):
         self.K = K
         self.cached = cached
         self.add_self_loops = add_self_loops
-
         self._cached_x = None
 
         self.lin = Linear(in_channels, out_channels, bias=bias)
-
         self.bn = bn
         self.dropout = dropout
         self.lin_first = lin_first
@@ -109,7 +107,6 @@ class SGConv(MessagePassing):
             x = self.bn(x)
         if self.dropout > 0.:
             x = F.dropout(x, p=self.dropout, training=self.training)
-
         if not self.lin_first:
             x = self.lin(x)
 

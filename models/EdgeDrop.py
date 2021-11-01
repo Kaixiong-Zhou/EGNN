@@ -3,7 +3,6 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 from torch_geometric.utils import dropout_adj, to_dense_adj
-from torch_geometric.nn.conv.gcn_conv import gcn_norm
 
 
 class EdgeDrop(nn.Module):
@@ -15,8 +14,7 @@ class EdgeDrop(nn.Module):
         self.num_feats = args.num_feats
         self.num_classes = args.num_classes
         self.dim_hidden = args.dim_hidden
-        self.dropout = args.dropout
-        self.cached = self.transductive = args.transductive
+        self.embedding_dropout = args.dropout
         self.layers_GCN = nn.ModuleList([])
         self.layers_bn = nn.ModuleList([])
         self.type_norm = args.type_norm
@@ -43,61 +41,15 @@ class EdgeDrop(nn.Module):
                                     force_undirected=False, training=self.training)
 
         for i in range(self.num_layers-1):
-            x = F.dropout(x, p=self.dropout, training=self.training)
+            x = F.dropout(x, p=self.embedding_dropout, training=self.training)
             x = self.layers_GCN[i](x, edge_index)
             if self.type_norm == 'batch':
                 x = self.layers_bn[i](x)
             x = F.relu(x)
 
-        x = F.dropout(x, p=self.dropout, training=self.training)
+        x = F.dropout(x, p=self.embedding_dropout, training=self.training)
         x = self.layers_GCN[-1](x, edge_index)
         return x
-
-    def Dirichlet_energy(self, x, adj):
-        # x = F.normalize(x, p=2, dim=1)
-        x = torch.matmul(torch.matmul(x.t(), adj), x)
-        energy = torch.trace(x)
-        return energy.item()
-
-
-    def compute_energy(self, x, edge_index, device):
-
-        energy_list = []
-
-        edge_weight = None
-        edge_index_cached, edge_weight = gcn_norm(
-            edge_index, edge_weight, x.size(0), False, dtype=x.dtype)
-        adj_weight = to_dense_adj(edge_index_cached, edge_attr=edge_weight)
-        num_nodes = x.size(0)
-        adj_weight = torch.squeeze(adj_weight, dim=0)
-        laplacian_weight = torch.eye(num_nodes, dtype=torch.float, device=device) - adj_weight
-
-        # compute energy in the first layer
-        energy = self.Dirichlet_energy(x, laplacian_weight)
-        energy_list.append(energy)
-
-        edge_index, _ = dropout_adj(edge_index, p=self.edge_dropout,
-                                    force_undirected=False, training=self.training)
-
-        for i in range(self.num_layers-1):
-            x = F.dropout(x, p=self.dropout, training=self.training)
-            x = self.layers_GCN[i](x, edge_index)
-            if self.type_norm in ['batch', 'pair']:
-                x = self.layers_bn[i](x)
-            x = F.relu(x)
-
-            # compute energy in the middle layer
-            energy = self.Dirichlet_energy(x, laplacian_weight)
-            energy_list.append(energy)
-
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.layers_GCN[-1](x, edge_index)
-
-        # compute energy in the last layer
-        energy = self.Dirichlet_energy(x, laplacian_weight)
-        energy_list.append(energy)
-        return energy_list
-
 
 
 

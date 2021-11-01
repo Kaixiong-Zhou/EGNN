@@ -1,8 +1,6 @@
 import torch
 from torch_geometric.nn import GCNConv
 import torch.nn.functional as F
-from torch_geometric.utils import to_dense_adj
-
 
 
 class JKNetMaxpool(torch.nn.Module):
@@ -24,7 +22,7 @@ class JKNetMaxpool(torch.nn.Module):
         self.num_classes = args.num_classes
         self.dim_hidden = args.dim_hidden
         self.dropout = args.dropout
-        self.cached = self.transductive = args.transductive
+        self.cached = args.transductive
         self.layers_GCN = torch.nn.ModuleList([])
         self.layers_bn = torch.nn.ModuleList([])
         self.type_norm = args.type_norm
@@ -60,38 +58,4 @@ class JKNetMaxpool(torch.nn.Module):
         h = torch.max(h, dim=0)[0]
         x = self.last_linear(h)
         return x
-
-    def Dirichlet_energy(self, x, adj):
-        # x = F.normalize(x, p=2, dim=1)
-        x = torch.matmul(torch.matmul(x.t(), adj), x)
-        energy = torch.trace(x)
-        return energy.item()
-
-
-    def compute_energy(self, x, edge_index, device):
-        energy_list = []
-        edge_index_cached, edge_weight = self.layers_GCN[0]._cached_edge_index
-        adj_weight = to_dense_adj(edge_index_cached, edge_attr=edge_weight)
-        num_nodes = x.size(0)
-        adj_weight = torch.squeeze(adj_weight, dim=0)
-        laplacian_weight = torch.eye(num_nodes, dtype=torch.float, device=device) - adj_weight
-
-        # compute energy in the first layer
-        energy = self.Dirichlet_energy(x, laplacian_weight)
-        energy_list.append(energy)
-
-
-        for i in range(self.num_layers):
-            x = self.layers_GCN[i](x, edge_index)
-            if self.type_norm == 'batch':
-                x = self.layers_bn[i](x)
-            x = F.relu(x)
-
-            # compute energy in the middle layer
-            energy = self.Dirichlet_energy(x, laplacian_weight)
-            energy_list.append(energy)
-
-            x = F.dropout(x, p=self.dropout, training=self.training)
-
-        return energy_list
 

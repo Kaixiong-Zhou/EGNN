@@ -1,1 +1,1 @@
-python main.py --cuda_num=1 --type_model='EGNN' --dataset='Cora'
+python main.py --cuda_num=0 --type_model='EGNN' --dataset='Cora' --num_layers=64

@@ -7,7 +7,6 @@ from torch_sparse import SparseTensor, matmul
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
 import torch
-from torch_geometric.utils import to_dense_adj
 
 
 
@@ -68,10 +67,10 @@ class APPNP(MessagePassing):
         self.num_feats = args.num_feats
         self.num_classes = args.num_classes
         self.dim_hidden = args.dim_hidden
-        self.dropout = args.adj_dropout
+        self.adj_dropout = args.adj_dropout
         self.embedding_dropout = args.dropout
-        self.alpha = args.alpha if self.dataset!='ogbn-arxiv' else 0.2
-        self.cached = self.transductive = args.transductive
+        self.beta = args.beta if self.dataset!='ogbn-arxiv' else 0.2
+        self.cached = args.transductive
         self.input_trans = torch.nn.Linear(self.num_feats, self.dim_hidden)
         self.output_trans = torch.nn.Linear(self.dim_hidden, self.num_classes)
         self.type_norm = args.type_norm
@@ -126,14 +125,14 @@ class APPNP(MessagePassing):
         x = h
 
         for k in range(self.num_layers):
-            if self.dropout > 0 and self.training:
+            if self.adj_dropout > 0 and self.training:
                 if isinstance(edge_index, Tensor):
                     assert edge_weight is not None
-                    edge_weight = F.dropout(edge_weight, p=self.dropout, training=self.training)
+                    edge_weight = F.dropout(edge_weight, p=self.adj_dropout, training=self.training)
                 else:
                     value = edge_index.storage.value()
                     assert value is not None
-                    value = F.dropout(value, p=self.dropout, training=self.training)
+                    value = F.dropout(value, p=self.adj_dropout, training=self.training)
                     edge_index = edge_index.set_value(value, layout='coo')
 
             # propagate_type: (x: Tensor, edge_weight: OptTensor)
@@ -141,75 +140,10 @@ class APPNP(MessagePassing):
                                size=None)
             if self.type_norm == 'batch':
                 x = self.layers_bn[k](x)
-            x = x * (1 - self.alpha)
-            x += self.alpha * h
+            x = x * (1 - self.beta)
+            x += self.beta * h
 
         return x
-
-    def Dirichlet_energy(self, x, adj):
-        x = F.normalize(x, p=2, dim=1)
-        x = torch.matmul(torch.matmul(x.t(), adj), x)
-        energy = torch.trace(x)
-        return energy.item()
-
-
-    def compute_energy(self, x, edge_index, device):
-
-        energy_list = []
-
-        cache = self._cached_edge_index
-        edge_index, edge_weight = cache[0], cache[1]
-        adj_weight = to_dense_adj(edge_index, edge_attr=edge_weight)
-        num_nodes = x.size(0)
-        adj_weight = torch.squeeze(adj_weight, dim=0)
-        laplacian_weight = torch.eye(num_nodes, dtype=torch.float, device=device) - adj_weight
-
-        # compute energy in the first layer
-        energy = self.Dirichlet_energy(x, laplacian_weight)
-        energy_list.append(energy)
-
-
-        # input transformation according to the official implementation
-        x = F.dropout(x, p=self.embedding_dropout, training=self.training)
-        x = self.input_trans(x)
-        if self.type_norm == 'batch':
-            x = self.input_bn(x)
-        x = F.relu(x)
-        x = F.dropout(x, p=self.embedding_dropout, training=self.training)
-        h = self.output_trans(x)
-        x = h
-
-        # compute energy in the first layer
-        energy = self.Dirichlet_energy(x, laplacian_weight)
-        energy_list.append(energy)
-
-        for k in range(self.num_layers):
-            if self.dropout > 0 and self.training:
-                if isinstance(edge_index, Tensor):
-                    assert edge_weight is not None
-                    edge_weight = F.dropout(edge_weight, p=self.dropout, training=self.training)
-                else:
-                    value = edge_index.storage.value()
-                    assert value is not None
-                    value = F.dropout(value, p=self.dropout, training=self.training)
-                    edge_index = edge_index.set_value(value, layout='coo')
-
-            # propagate_type: (x: Tensor, edge_weight: OptTensor)
-            x = self.propagate(edge_index, x=x, edge_weight=edge_weight,
-                               size=None)
-            x = x * (1 - self.alpha)
-            x += self.alpha * h
-            if self.type_norm == 'batch':
-                x = self.layers_bn[k](x)
-
-            # compute energy in the first layer
-            energy = self.Dirichlet_energy(x, laplacian_weight)
-            energy_list.append(energy)
-
-
-
-        return energy_list
-
 
     def message(self, x_j: Tensor, edge_weight: Tensor) -> Tensor:
         return edge_weight.view(-1, 1) * x_j
